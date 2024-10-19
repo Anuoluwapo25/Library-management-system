@@ -22,11 +22,11 @@ You can use any tools you like to help you complete the project. So if you've go
 ## Objectives
 
 - Allow users to sign up, log in, and manage their accounts.
-- Enable users to browse, search, and lter books.
+- Enable users to browse, search, and filter books.
 - Facilitate the borrowing and returning of books.
-- Ensure efcient management of book reservations.
+- Ensure efficient management of book reservations.
 - Provide robust features for viewing borrowing history and managing fines.
-- Enable administrators to manage books, users, and nes effectively.
+- Enable administrators to manage books, users, and fines effectively.
 
 Want some support on the project? [Join our community](https://masteringbackend.com/community) and ask questions in the **#project-builders** channel.
 

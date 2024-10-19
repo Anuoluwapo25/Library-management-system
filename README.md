@@ -15,7 +15,7 @@ Thanks for checking out this backend project.
 
 The project is to build **Build Your Own Library Management System** and get the front end working (the front end has already integrated the API).
 
-[Click here to view more details about this project.](https://projects.masteringbackend.com/projects/build-fin-pay-a-fin-tech-solution)
+[Click here to view more details about this project.](https://app.masteringbackend.com/projects/build-your-own-library-management-system)
 
 You can use any tools you like to help you complete the project. So if you've got something you'd like to practice, feel free to give it a go.
 

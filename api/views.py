@@ -4,7 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from django.db.models.query import QuerySet
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer
+from .models import User
+from datetime import datetime
 
 class RegisterView(APIView):
     def post(self, request):
@@ -119,3 +122,33 @@ class ResetpasswordView(APIView):
                 "name": user.get_full_name()
             }
         }, status=status.HTTP_200_OK)
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            # Get the refresh token from the request
+            refresh_token = request.data.get('refresh_token')
+            
+            if refresh_token:
+                # Blacklist the refresh token
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            
+            return Response({
+                "status": 200,
+                "message": "User logged out successfully",
+                "data": {
+                    "user_id": request.user.id,
+                    "logout_time": datetime.datetime.now()
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "status": 400,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+

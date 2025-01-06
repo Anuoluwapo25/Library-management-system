@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import User
+from django.contrib.auth import authenticate
+
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -25,3 +27,54 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+    
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            # Check if user exists
+            if not User.objects.filter(email=email).exists():
+                raise serializers.ValidationError({
+                    'status': 400,
+                    'message': 'User with this email does not exist'
+                })
+            
+            # Authenticate user
+            user = authenticate(username=email, password=password)  # Using email as username
+            if not user:
+                raise serializers.ValidationError({
+                    'status': 400,
+                    'message': 'Invalid credentials'
+                })
+
+            attrs['user'] = user
+            return attrs
+        
+        raise serializers.ValidationError({
+            'status': 400,
+            'message': 'Both email and password are required'
+        })
+
+class UserDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'account_type', 'country', 
+                 'country_code', 'state', 'address', 'phone_number']
+        
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        user = User.objects.filter(email=data['email']).first()  # Use .first() to safely return None if no user found
+        if not user:
+            raise serializers.ValidationError('User not found')
+        data['user'] = user  # Attach the user to the data
+        return data

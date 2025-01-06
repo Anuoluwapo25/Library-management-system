@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'rest_framework',
+    'rest_framework_simplejwt',
     'rest_framework.authtoken',
 ]
 
@@ -114,7 +115,13 @@ USE_I18N = True
 
 USE_TZ = True
 
-AUTH_USER_MODEL = 'api.Client'
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+AUTH_USER_MODEL = 'api.User'
 
 
 # Static files (CSS, JavaScript, Images)

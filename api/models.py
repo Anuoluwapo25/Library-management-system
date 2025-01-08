@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class User(AbstractUser):
-    account_type = models.CharField(max_length=10, choices=[('user', 'User'), ('admin', 'Admin')])
+    account_type = models.CharField(max_length=10, choices=[('user', 'User'), ('admin', 'Admin')], default='user')
     country = models.CharField(max_length=100)
     country_code = models.CharField(max_length=10)
     state = models.CharField(max_length=100)
@@ -11,3 +11,23 @@ class User(AbstractUser):
 
     class Meta:
         db_table = 'users'
+
+class Author(models.Model):
+    name = models.CharField(max_length=255)
+
+
+    def __str__(self):
+        return self.name
+
+
+class Book(models.Model):
+     title = models.CharField(max_length=255)
+     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books')
+     genre = models.CharField(max_length=100)
+     description = models.TextField()
+     availability = models.BooleanField(default=True)
+     created_at = models.DateTimeField(auto_now_add=True)
+
+
+     def __str__(self):
+         return self.title

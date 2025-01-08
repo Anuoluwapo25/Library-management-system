@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from django.db.models.query import QuerySet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
-from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer
+from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, AuthorSerializer
 from .models import User
 from datetime import datetime
 
@@ -151,4 +151,29 @@ class LogoutView(APIView):
                 "status": 400,
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+        
+class BookView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        if request.user.account_type != 'admin':
+            return Response (
+                {
+                    "status": 403,
+                    "message": "Only admins can add books."
+                }, status=status.HTTP_403_FORBIDDEN
+            )
+        serializer = BookSerializer(data=request.data)
+        if serializer.is_valid():
+            book = book.save()
+
+            return Response({
+                "status": 200,
+                "message": "",
+                "data": BookSerializer(book).data
+            }, status=status.HTTP_200_OK
+            )
+        return Response ({
+            "status": 400,
+            "message": serializer.errors,
+        }, status=status.HTTP_400_BAD_REQUEST)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Book, Author
 from django.contrib.auth import authenticate
 
 
@@ -45,8 +45,9 @@ class LoginSerializer(serializers.Serializer):
                     'message': 'User with this email does not exist'
                 })
             
-            # Authenticate user
-            user = authenticate(username=email, password=password)  # Using email as username
+            
+            user = authenticate(username=email, password=password)  
+            # Using email as username
             if not user:
                 raise serializers.ValidationError({
                     'status': 400,
@@ -73,8 +74,25 @@ class ResetPasswordSerializer(serializers.Serializer):
     password = serializers.CharField()
 
     def validate(self, data):
-        user = User.objects.filter(email=data['email']).first()  # Use .first() to safely return None if no user found
+        user = User.objects.filter(email=data['email']).first() 
         if not user:
             raise serializers.ValidationError('User not found')
-        data['user'] = user  # Attach the user to the data
+        data['user'] = user 
         return data
+
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Author
+        fields = ['id', 'name']  
+
+class BookSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer()
+
+    class Meta:
+        model = Book
+        fields = ['id', 'title', 'author', 'genre', 'description', 'availability', 'created_at']
+
+    def create(self, validated_data):
+        author_data = validated_data.pop('author')
+        author, created = Author.objects.get_or_create(**author_data)
+        return Book.objects.create(author=author, **validated_data)

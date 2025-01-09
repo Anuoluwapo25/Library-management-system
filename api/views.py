@@ -181,20 +181,16 @@ class BookView(APIView):
     
     def get(self, request):
         try:
-            # Get pagination parameters from query params
             page = int(request.query_params.get('page', 0))
             size = int(request.query_params.get('size', 10))
             
-            # Get all books
             books = Book.objects.all().order_by('id')
             
-            # Create paginator instance
             paginator = Paginator(books, size)
             
-            # Get the requested page
-            current_page = paginator.get_page(page + 1)  # Adding 1 because paginator is 1-based
             
-            # Serialize the books
+            current_page = paginator.get_page(page + 1)  
+            
             serialized_books = BookSerializer(current_page, many=True).data
             
             return Response({

@@ -5,8 +5,9 @@ from rest_framework.permissions import AllowAny
 from django.db.models.query import QuerySet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+from django.core.paginator import Paginator
 from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, AuthorSerializer
-from .models import User
+from .models import Book
 from datetime import datetime
 
 class RegisterView(APIView):
@@ -165,7 +166,7 @@ class BookView(APIView):
             )
         serializer = BookSerializer(data=request.data)
         if serializer.is_valid():
-            book = book.save()
+            book = serializer.save()
 
             return Response({
                 "status": 200,
@@ -177,3 +178,49 @@ class BookView(APIView):
             "status": 400,
             "message": serializer.errors,
         }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get(self, request):
+        try:
+            # Get pagination parameters from query params
+            page = int(request.query_params.get('page', 0))
+            size = int(request.query_params.get('size', 10))
+            
+            # Get all books
+            books = Book.objects.all().order_by('id')
+            
+            # Create paginator instance
+            paginator = Paginator(books, size)
+            
+            # Get the requested page
+            current_page = paginator.get_page(page + 1)  # Adding 1 because paginator is 1-based
+            
+            # Serialize the books
+            serialized_books = BookSerializer(current_page, many=True).data
+            
+            return Response({
+                "status": 200,
+                "message": "",
+                "data": {
+                    "books": serialized_books,
+                    "pagination": {
+                        "totalPages": paginator.num_pages,
+                        "totalItems": paginator.count,
+                        "currentPage": page,
+                        "pageSize": size
+                    }
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except ValueError:
+            return Response({
+                "status": 400,
+                "message": "Invalid pagination parameters",
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({
+                "status": 500,
+                "message": str(e),
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+
+    

@@ -6,6 +6,7 @@ from django.db.models.query import QuerySet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
 from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, AuthorSerializer
 from .models import Book
 from datetime import datetime
@@ -17,7 +18,6 @@ class RegisterView(APIView):
             if serializer.is_valid():
                 user = serializer.save()
                 
-                # Generate JWT token
                 refresh = RefreshToken.for_user(user)
                 token = str(refresh.access_token)
                 
@@ -53,8 +53,8 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-    permission_classes = [AllowAny]  # Allow unauthenticated access
-    authentication_classes = []      # No authentication required for login
+    permission_classes = [AllowAny]  
+    authentication_classes = []      
     
     http_method_names = ['post'] 
     def post(self, request):
@@ -179,8 +179,21 @@ class BookView(APIView):
             "message": serializer.errors,
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    def get(self, request):
+    def get(self, request, id=None):
         try:
+            if id is not None:
+                book = Book.objects.filter(id=id).first()
+                if book:
+                    return Response(
+                        {
+                            "status": 200,
+                            "message": "Retrieved a single book successfully.",
+                            "data": BookSerializer(book).data
+                        },
+                        status=status.HTTP_200_OK
+                    )
+            
+
             page = int(request.query_params.get('page', 0))
             size = int(request.query_params.get('size', 10))
             
@@ -188,8 +201,7 @@ class BookView(APIView):
             
             paginator = Paginator(books, size)
             
-            
-            current_page = paginator.get_page(page + 1)  
+            current_page = paginator.get_page(page + 1)
             
             serialized_books = BookSerializer(current_page, many=True).data
             
@@ -213,10 +225,14 @@ class BookView(APIView):
                 "message": "Invalid pagination parameters",
             }, status=status.HTTP_400_BAD_REQUEST)
             
+        except Book.DoesNotExist:
+            return Response({
+                "status": 404,
+                "message": "Book not found",
+            }, status=status.HTTP_404_NOT_FOUND)
+            
         except Exception as e:
             return Response({
                 "status": 500,
                 "message": str(e),
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
-
-    
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

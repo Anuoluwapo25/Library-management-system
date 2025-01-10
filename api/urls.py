@@ -8,6 +8,7 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view(), name="login"),
     path('auth/password/reset/', ResetpasswordView.as_view(), name="resetpassword"),
     path('auth/logout/', LogoutView.as_view(), name="logout"),
-    path('auth/books/', BookView.as_view(), name='add-book')
+    path('auth/books/', BookView.as_view(), name='add-book'),
+    path('auth/books/<int:id>', BookView.as_view(), name='add-book'),
 ]
 

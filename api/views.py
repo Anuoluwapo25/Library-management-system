@@ -236,3 +236,29 @@ class BookView(APIView):
                 "status": 500,
                 "message": str(e),
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+class DeleteView(APIView):
+    def post(self, request, id):
+        book = Book.objects.filter(id=id).first()
+        
+        if not book:
+            return Response({
+                "status": 404,
+                "message": "Book not found"
+            }, status=status.HTTP_NOT_FOUND)
+            
+        try:
+            book.delete()
+            return Response({
+                "status": 200,
+                "message": "Book deleted successfully"
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "status": 400,
+                "message": str(e)
+            }, status=status.HTTP_BAD_REQUEST)
+
+

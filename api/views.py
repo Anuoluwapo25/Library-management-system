@@ -236,6 +236,53 @@ class BookView(APIView):
                 "status": 500,
                 "message": str(e),
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UpdateView(APIView):
+    def post(self, request, id):
+        book = Book.objects.filter(id=id).first()
+        
+        if not book:
+            return Response({
+                "status": 404,
+                "message": "Book not found"
+            }, status=status.HTTP_NOT_FOUND)
+            
+        try:
+            book.delete()
+            return Response({
+                "status": 200,
+                "message": "Book deleted successfully"
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "status": 400,
+                "message": str(e)
+            }, status=status.HTTP_BAD_REQUEST)
+        
+    def put(self, request, id):
+        if request.user.account_type != 'admin':
+            return Response (
+                {
+                    "status": 403,
+                    "message": "Only admins can add books."
+                }, status=status.HTTP_403_FORBIDDEN
+            )
+        book = Book.objects.filter(id=id).first()
+        serializer = BookSerializer(book, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response ({
+                "status": 200,
+                "messages": serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response ({
+            "status": 400,
+            "messages": serializer.error
+        })
+
+
     
 
 class DeleteView(APIView):

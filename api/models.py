@@ -31,3 +31,13 @@ class Book(models.Model):
 
      def __str__(self):
          return self.title
+
+
+class Borrow(models.Model):
+    dateBorrow = models.DateTimeField(auto_now_add=True)
+    borrowedBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name='borrowed_books')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='borrow_records')
+
+
+    def __str__(self):
+        return f"{self.borrowedBy.username} borrowed {self.book.title}"

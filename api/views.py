@@ -308,4 +308,24 @@ class DeleteView(APIView):
                 "message": str(e)
             }, status=status.HTTP_BAD_REQUEST)
 
+class BorrowView(APIView):
+    def post(self, request):
+        book_id = request.data.get('id')
+        book = Book.objects.filter(id=book_id).first()
+        if not book:
+            return Response ({
+                "status": 403,
+                "message": "book not avalaible"
+            }, status=status.HTTP_403_FORBIDDEN)
+        serializer = BookSerializer(book)
+        if serializer.is_valid:
+            return Response ({
+                "status": 200,
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response ({
+            "status": 400,
+            "message": serializer.error
+        })
+
 

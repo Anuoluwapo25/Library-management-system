@@ -310,7 +310,7 @@ class DeleteView(APIView):
 
 class BorrowView(APIView):
     def post(self, request):
-        book_id = request.data.get('id')
+        book_id = request.data.get('bookId')
         book = Book.objects.filter(id=book_id).first()
         if not book:
             return Response ({

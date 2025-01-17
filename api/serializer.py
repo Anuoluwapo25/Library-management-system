@@ -120,5 +120,5 @@ class BorrowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Borrow
-        fields = ['dateBorrow', 'borrowedBy', 'book' ]
+        fields = ['dateBorrow', 'borrowedBy', 'book', 'dateReturn']
 

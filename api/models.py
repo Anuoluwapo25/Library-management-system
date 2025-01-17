@@ -37,6 +37,7 @@ class Borrow(models.Model):
     dateBorrow = models.DateTimeField(auto_now_add=True)
     borrowedBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name='borrowed_books')
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='borrow_records')
+    dateReturn = models.DateTimeField(null=True, blank=True)
 
 
     def __str__(self):

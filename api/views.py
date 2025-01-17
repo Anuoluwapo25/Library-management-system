@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, AuthorSerializer
+from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer
 from .models import Book
 from datetime import datetime
 
@@ -320,12 +320,33 @@ class BorrowView(APIView):
         serializer = BookSerializer(book)
         if serializer.is_valid:
             return Response ({
-                "status": 200,
+                "status": 201,
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
         return Response ({
             "status": 400,
             "message": serializer.error
         })
+    
 
+class ReturnBookView(APIView):
+    def post(self, request):
+        book_id = request.data.get('bookId')
+        book = Book.objects.filter(id=book_id).first()
+        if not book:
+            return Response ({
+                "status": 403,
+                "message": "book not avalaible"
+            })
+        serializer = BorrowSerializer(book)
+        if serializer.is_valid():
+            return Response ({
+                "status": 201,
+                "message": "Book returned successfully",
+                "data": serializer.data
+            }, status=status._HTTP_200_CREATED)
+        return Response ({
+            "status": 400,
+            "message": serializer.error
+        })
 

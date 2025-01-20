@@ -115,8 +115,8 @@ class BookSerializer(serializers.ModelSerializer):
     
 
 class BorrowSerializer(serializers.ModelSerializer):
-    book = BookSerializer()
-    borrowedBy = User()
+    book = BookSerializer(read_only=True)
+    borrowedBy = UserDataSerializer(read_only=True)
 
     class Meta:
         model = Borrow

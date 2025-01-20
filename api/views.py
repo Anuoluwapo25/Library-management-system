@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer
-from .models import Book
+from .models import Book, User, Borrow
 from datetime import datetime
 
 class RegisterView(APIView):
@@ -309,24 +309,40 @@ class DeleteView(APIView):
             }, status=status.HTTP_BAD_REQUEST)
 
 class BorrowView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         book_id = request.data.get('bookId')
+        if not book_id:
+            return Response({
+                "status": 400,
+                "message": "bookID required"
+            }, status=status.HTTP_400_BAD_REQUEST) 
+        
         book = Book.objects.filter(id=book_id).first()
-        if not book:
-            return Response ({
+        if not book or not book.availability:
+            return Response({
                 "status": 403,
-                "message": "book not avalaible"
+                "message": "Book not available"
             }, status=status.HTTP_403_FORBIDDEN)
-        serializer = BookSerializer(book)
-        if serializer.is_valid:
-            return Response ({
-                "status": 201,
-                "data": serializer.data
-            }, status=status.HTTP_200_OK)
-        return Response ({
-            "status": 400,
-            "message": serializer.error
-        })
+
+       
+        borrow = Borrow.objects.create(
+            book=book,
+            borrowedBy=request.user
+        )
+        
+       
+        book.availability = False
+        book.save()
+        
+        serializer = BorrowSerializer(borrow)
+        
+        return Response({
+            "status": 201,
+            "message": "Book borrowed successfully",
+            "data": serializer.data
+        }, status=status.HTTP_201_CREATED)
     
 
 class ReturnBookView(APIView):

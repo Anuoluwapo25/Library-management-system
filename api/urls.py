@@ -11,7 +11,7 @@ urlpatterns = [
     path('auth/books/', BookView.as_view(), name='add-book'),
     # path('auth/books/<int:id>', DeleteView.as_view(), name='delete-book'),
     path('auth/books/<int:id>', UpdateView.as_view(), name='update-book'),
-    path('auth/borrow/', BorrowView.as_view(), name='borrow-book'),
+    path('borrow/', BorrowView.as_view(), name='borrow-book'),
     path('auth/return/', ReturnBookView.as_view(), name="return-book")
     
 ]

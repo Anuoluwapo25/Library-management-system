@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.conf import settings
+
 
 class User(AbstractUser):
     account_type = models.CharField(max_length=10, choices=[('user', 'User'), ('admin', 'Admin')], default='user')
@@ -35,7 +37,7 @@ class Book(models.Model):
 
 class Borrow(models.Model):
     dateBorrow = models.DateTimeField(auto_now_add=True)
-    borrowedBy = models.ForeignKey(User, on_delete=models.CASCADE, related_name='borrowed_books')
+    borrowedBy = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='borrows')
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='borrow_records')
     dateReturn = models.DateTimeField(null=True, blank=True)
 

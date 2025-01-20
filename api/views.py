@@ -354,15 +354,18 @@ class ReturnBookView(APIView):
                 "status": 403,
                 "message": "book not avalaible"
             })
-        serializer = BorrowSerializer(book)
-        if serializer.is_valid():
-            return Response ({
-                "status": 201,
-                "message": "Book returned successfully",
-                "data": serializer.data
-            }, status=status._HTTP_200_CREATED)
+        
+        book.availability = True
+        book.save()
+
+        serializer = BookSerializer(book)
+        
         return Response ({
-            "status": 400,
-            "message": serializer.error
-        })
+            "status": 201,
+            "message": "Book returned successfully",
+            "data": serializer.data
+        }, status=status.HTTP_201_CREATED)
+
+
+
 

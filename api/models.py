@@ -44,3 +44,13 @@ class Borrow(models.Model):
 
     def __str__(self):
         return f"{self.borrowedBy.username} borrowed {self.book.title}"
+    
+
+class Reserve(models.Model):
+    dateReserved = models.DateTimeField(auto_now_add=True)
+    reservedBy = models.ForeignKey('User', on_delete=models.CASCADE, related_name='reserved')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reserve_book')
+    isActive = models.BooleanField()
+
+    class Meta:
+        unique_together = ['book', 'reservedBy', 'isActive']

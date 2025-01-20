@@ -7,8 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer
-from .models import Book, User, Borrow
+from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer, ReserveSerializer
+from .models import Book, User, Borrow, Reserve
 from datetime import datetime
 
 class RegisterView(APIView):
@@ -365,6 +365,59 @@ class ReturnBookView(APIView):
             "message": "Book returned successfully",
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
+
+
+class ReserveView(APIView):
+    def post(self, request):
+        book_id = request.data.get('bookId')
+        if not book_id:
+            return Response({
+                "status": 400,
+                "message": "bookID required"
+            }, status=status.HTTP_400_BAD_REQUEST) 
+        
+        book = Book.objects.filter(id=book_id).first()
+        if not book or not book.availability:
+            return Response({
+                "status": 403,
+                "message": "Book not available"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        if not book.availability:
+            return Response ({
+                "status": 400,
+                "message": "Book is currently borrowed"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        reserve_exist = Reserve.objects.filter(
+            reservedBy = request.user,
+            book = book,
+            isActive = True
+        ).first()
+        if reserve_exist:
+            return Response ({
+                "status": 400,
+                "message": "You have already reserved this book"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        reserve = Reserve.objects.create(
+            book = book,
+            reservedBy = request.user,
+            isActive = True
+        )
+        book.availability = False
+        book.save()
+        serializer = ReserveSerializer(reserve)
+
+        return Response({
+                "status": 201,
+                "message": "Book reserved successfully",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+                "status": 400,
+                "message": "Unable to reserve book"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 

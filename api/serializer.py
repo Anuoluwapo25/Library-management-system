@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Book, Author, Borrow
+from .models import User, Book, Author, Borrow, Reserve
 from django.contrib.auth import authenticate
 
 
@@ -121,4 +121,14 @@ class BorrowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Borrow
         fields = ['dateBorrow', 'borrowedBy', 'book', 'dateReturn']
+
+
+class ReserveSerializer(serializers.ModelSerializer):
+    book = BookSerializer(read_only=True)
+    reservedBy = UserDataSerializer(read_only=True)
+
+    class Meta:
+        model = Reserve
+        fields = ['dateReserved', 'reservedBy', 'book']
+
 

@@ -568,6 +568,38 @@ class ReserveView(APIView):
                 "message": "Book reserved successfully",
                 "data": serializer.data
             }, status=status.HTTP_201_CREATED)
+    
+
+class CancelReservationView(APIView):
+    def delete(self, request, id=None):
+        
+        book = Book.objects.filter(id=id).first()
+        print(book)
+        if not book:
+            return Response({
+                "status": 403,
+                "message": "Book not available"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        
+        reservation = Reserve.objects.get(
+            id = id,
+            reservedBy = request.user,
+            book = book,
+            isActive = True
+        )
+        reservation.isActive = False
+        reservation.save()
+        
+        book.availability = True
+        book.save()
+        serializer = BookSerializer(book)
+
+        return Response({
+                "status": 201,
+                "message": "Book reserved Cancelled",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
 
 
 

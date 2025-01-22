@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer, ReserveSerializer
 from .models import Book, User, Borrow, Reserve
 from datetime import datetime
+from django.utils import timezone
 
 class RegisterView(APIView):
     def post(self, request):
@@ -246,7 +247,7 @@ class UpdateView(APIView):
             return Response({
                 "status": 404,
                 "message": "Book not found"
-            }, status=status.HTTP_NOT_FOUND)
+            }, status=status.HTTP_404_NOT_FOUND)
             
         try:
             book.delete()
@@ -308,41 +309,41 @@ class DeleteView(APIView):
                 "message": str(e)
             }, status=status.HTTP_BAD_REQUEST)
 
-class BorrowView(APIView):
-    permission_classes = [IsAuthenticated]
+# class BorrowView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        book_id = request.data.get('bookId')
-        if not book_id:
-            return Response({
-                "status": 400,
-                "message": "bookID required"
-            }, status=status.HTTP_400_BAD_REQUEST) 
+#     def post(self, request):
+#         book_id = request.data.get('bookId')
+#         if not book_id:
+#             return Response({
+#                 "status": 400,
+#                 "message": "bookID required"
+#             }, status=status.HTTP_400_BAD_REQUEST) 
         
-        book = Book.objects.filter(id=book_id).first()
-        if not book or not book.availability:
-            return Response({
-                "status": 403,
-                "message": "Book not available"
-            }, status=status.HTTP_403_FORBIDDEN)
+#         book = Book.objects.filter(id=book_id).first()
+#         if not book or not book.availability:
+#             return Response({
+#                 "status": 403,
+#                 "message": "Book not available"
+#             }, status=status.HTTP_403_FORBIDDEN)
 
        
-        borrow = Borrow.objects.create(
-            book=book,
-            borrowedBy=request.user
-        )
+#         borrow = Borrow.objects.create(
+#             book=book,
+#             borrowedBy=request.user
+#         )
         
        
-        book.availability = False
-        book.save()
+#         book.availability = False
+#         book.save()
         
-        serializer = BorrowSerializer(borrow)
+#         serializer = BorrowSerializer(borrow)
         
-        return Response({
-            "status": 201,
-            "message": "Book borrowed successfully",
-            "data": serializer.data
-        }, status=status.HTTP_201_CREATED)
+#         return Response({
+#             "status": 201,
+#             "message": "Book borrowed successfully",
+#             "data": serializer.data
+#         }, status=status.HTTP_201_CREATED)
     
 
 class ReturnBookView(APIView):
@@ -365,6 +366,160 @@ class ReturnBookView(APIView):
             "message": "Book returned successfully",
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
+
+
+# class Renewborrow(APIView):
+#     # permission_classes = [IsAuthenticated]
+    
+#     def post(self, request):
+#         book_id = request.data.get('bookId')
+#         print(book_id)
+#         book = Book.objects.filter(id=book_id).first()
+#         print(book)
+#         if not book:
+#             return Response ({
+#                 'status': 403,
+#                 'message': 'book not avalaible'
+#             }, status=status.HTTP_BAD_REQUEST)
+
+#         borrow = Borrow.objects.filter(
+#                 book_id=book_id,
+#                 borrowedBy=request.user,
+#                 dateReturn__isnull=True
+#             ).first()
+#         print(borrow)
+
+#         if not borrow:
+#             return Response ({
+#                 'status': 404,
+#                 'message': "No active borrow found for this book"
+#             }, status=status.HTTP_404_NOT_FOUND)
+        
+#         borrow.book.availability = False
+#         borrow.book.save()
+        
+#         serializer = BorrowSerializer(borrow)
+        
+#         return Response({
+#             "status": 200,
+#             "message": "Book renewed successfully",
+#             "data": serializer.data
+#         }, status=status.HTTP_200_OK)
+
+class BorrowView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        book_id = request.data.get('bookId')
+        if not book_id:
+            return Response({
+                "status": 400,
+                "message": "bookId is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        print(f"Attempting to borrow book {book_id} for user {request.user.id}")
+        
+        book = Book.objects.filter(id=book_id).first()
+        if not book:
+            return Response({
+                "status": 404,
+                "message": "Book not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+            
+        if not book.availability:
+            return Response({
+                "status": 403,
+                "message": "Book not available"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        
+        try:
+            borrow = Borrow.objects.create(
+                book=book,
+                borrowedBy=request.user,
+                dateBorrow=timezone.now(),
+                dateReturn=None  
+            )
+            print(f"Borrow created with ID: {borrow.id}")
+            
+            
+            book.availability = False
+            book.save()
+            
+            
+            serializer = BorrowSerializer(borrow)
+            
+            return Response({
+                "status": 201,
+                "message": "Book borrowed successfully",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            print(f"Error creating borrow: {str(e)}")
+            return Response({
+                "status": 500,
+                "message": "Error creating borrow"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class RenewBorrowView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        book_id = request.data.get('bookId')
+        if not book_id:
+            return Response({
+                "status": 400,
+                "message": "bookId is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        print(f"Attempting to renew book {book_id} for user {request.user.id}")
+        
+       
+        try:
+            borrow = Borrow.objects.filter(
+                book_id=book_id,
+                borrowedBy=request.user,
+                dateReturn__isnull=True
+            ).first()
+            
+            if not borrow:
+                
+                all_borrows = Borrow.objects.filter(
+                    book_id=book_id,
+                    borrowedBy=request.user
+                )
+                print(f"Found {all_borrows.count()} borrows for this book and user:")
+                for b in all_borrows:
+                    print(f"Borrow ID: {b.id}, Return Date: {b.dateReturn}")
+                
+                return Response({
+                    "status": 404,
+                    "message": "No active borrow found for this book"
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+           
+            borrow.book.availability = False
+            borrow.book.save()
+            
+           
+            serializer = BorrowSerializer(borrow)
+            
+            return Response({
+                "status": 200,
+                "message": "Book renewed successfully",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            print(f"Error renewing borrow: {str(e)}")
+            return Response({
+                "status": 500,
+                "message": f"Error renewing borrow: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class ReserveView(APIView):
@@ -413,10 +568,8 @@ class ReserveView(APIView):
                 "message": "Book reserved successfully",
                 "data": serializer.data
             }, status=status.HTTP_201_CREATED)
-        return Response({
-                "status": 400,
-                "message": "Unable to reserve book"
-            }, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 

@@ -603,7 +603,41 @@ class CancelReservationView(APIView):
 
 
 
-
-
-
-
+class HistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            page = int(request.query_params.get('page', 0))
+            size = int(request.query_params.get('size', 10))
+            
+           
+            borrows = Borrow.objects.filter(
+                borrowedBy=request.user
+            ).order_by('-dateBorrow')
+            
+           
+            paginator = Paginator(borrows, size)
+            page_obj = paginator.get_page(page + 1)  
+            
+            
+            serializer = BorrowSerializer(page_obj, many=True)
+            
+            return Response({
+                "status": 200,
+                "message": "Retrieved all borrowed books history successfully",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except ValueError:
+            return Response({
+                "status": 400,
+                "message": "Invalid page or size parameter"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({
+                "status": 500,
+                "message": "Error retrieving borrow history"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    

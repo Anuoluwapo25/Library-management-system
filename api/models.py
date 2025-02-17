@@ -54,3 +54,15 @@ class Reserve(models.Model):
 
     class Meta:
         unique_together = ['book', 'reservedBy', 'isActive']
+
+
+class Fine(models.Model):
+    amount = models.CharField(max_length=255)
+    bookId = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='book')
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='book')
+    transactionDate = models.DateField()
+
+
+    def __str__(self):
+         return self.user
+

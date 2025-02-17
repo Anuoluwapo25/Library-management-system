@@ -7,8 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer, ReserveSerializer
-from .models import Book, User, Borrow, Reserve
+from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer, ReserveSerializer, FineSerializer
+from .models import Book, User, Borrow, Reserve, Fine
 from datetime import datetime
 from django.utils import timezone
 
@@ -640,4 +640,72 @@ class HistoryView(APIView):
                 "status": 500,
                 "message": "Error retrieving borrow history"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class FineView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        page = int(request.query_params.get("page"))
+        size = int(request.query_params.get("size"))
+
+        fines = Fine.objects.filter(
+            user = request.user
+        )
+
+        sort = request.query_params.get("sort", "transactionDate")
+        order = request.query_params.get("order",  "desc")
+        sort_by = f'-{sort}' if order == "desc" else sort
+
+        query_set = fines.order_by(sort_by)
+
+
+        paginator = Paginator(query_set, size)
+        page_obj = paginator.get_page(page + 1)
+
+        fineSerializer = FineSerializer(page_obj, many=True)
+
+        return Response ({
+            "status": 200,
+            "message": "Retrieved all fines successfully",
+            "date": fineSerializer.data
+        }, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+class PaymentProcessView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        amount = request.data.get('amount')
+        book_id = request.data.get('bookId')
+        user = request.user
+
+        # Here you can integrate Paystack payment processing logic
+        paystack_api = paystack.Transaction(authorization_key=paystack_secret_key)
+        try:
+            # Make payment request to Paystack
+            payment_response = paystack_api.initialize(amount=amount, email=user.email)
+            
+            # Save payment details to your database (example here)
+            fine_payment = Fine.objects.create(amount=amount, book_id=book_id, user=user)
+            serializer = FineSerializer(fine_payment)
+            
+            return Response({
+                "status": 200,
+                "message": "Payment processed successfully",
+                "data": serializer.data
+            })
+        except Exception as e:
+            return Response({
+                "status": 400,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
     

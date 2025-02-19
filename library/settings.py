@@ -143,6 +143,10 @@ CORS_ALLOWED_ORIGINS = [
      'http://localhost:5173',
 ]
 
+
+PAYSTACK_CALLBACK_URL = 'https://backend.com/api/payment/verify/'
+PAYSTACK_WEBHOOK_URL = 'https://backend.com/api/payment/webhook/'
+
 CORS_ALLOW_METHODS = [
     "GET",
     "POST",

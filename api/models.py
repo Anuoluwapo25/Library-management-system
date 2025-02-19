@@ -65,4 +65,16 @@ class Fine(models.Model):
 
     def __str__(self):
          return self.user
+    
+
+class Payment(models.Model):
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='payment')
+    amount = models.CharField()
+    bookId = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='book')
+    reference = models.CharField(max_length=200, unique=True)
+    transactionDate = models.DateField()
+    email = models.EmailField()
+
+    def __str__(self):
+        return f"Payment: {self.amount} from {self.email}"
 

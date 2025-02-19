@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Book, Author, Borrow, Reserve, Fine
+from .models import User, Book, Author, Borrow, Reserve, Fine, Payment
 from django.contrib.auth import authenticate
 
 
@@ -139,6 +139,15 @@ class FineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fine
         fields = ['amount', 'bookId', 'user', 'transactionDate']
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    bookId = BookSerializer(read_only=True)
+    user = UserDataSerializer(read_only=True)
+
+    class Meta:
+        model = Payment
+        fields =['user', 'amount', 'bookId' ,'reference','email', 'transactionDate']
     
 
 

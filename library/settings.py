@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
     "http://127.0.0.1:5173",
     '127.0.0.1',
     'localhost',
+    'https://library-management-system-pbnj.onrender.com',
 ]
 
 
@@ -141,6 +142,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
      'http://localhost:5173',
+     'https://library-management-system-pbnj.onrender.com',
 ]
 
 

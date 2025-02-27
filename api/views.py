@@ -5,12 +5,17 @@ from rest_framework.permissions import AllowAny
 from django.db.models.query import QuerySet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+from django.conf import settings
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer, ReserveSerializer, FineSerializer
-from .models import Book, User, Borrow, Reserve, Fine
+from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer, ReserveSerializer, FineSerializer, PaymentSerializer
+from .models import Book, User, Borrow, Reserve, Fine, Payment
 from datetime import datetime
 from django.utils import timezone
+import uuid
+
+
+
 
 class RegisterView(APIView):
     def post(self, request):
@@ -687,15 +692,55 @@ class PaymentProcessView(APIView):
         book_id = request.data.get('bookId')
         user = request.user
 
-        # Here you can integrate Paystack payment processing logic
-        paystack_api = paystack.Transaction(authorization_key=paystack_secret_key)
+        reference = f"pay_{uuid.uuid4().hex[:16]}"
+
+
+        payment = Payment.objects.create(
+            user = user,
+            bookId = book_id,
+            amount =amount,
+            reference = reference,
+            status="pending"
+        )
+       
+
+        headers = {
+            'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}',
+            'Content-Type': 'application/json',
+        }
+
+        amount_kobo = int(amount * 100)
+
+        payload= {
+            'email': request.user.email,
+            'amount': amount_kobo,
+            'reference': reference,
+            'callback_url': f"{request.build_absolute_uri('/').rstrip('/')}/api/payments/verify/{reference}/",
+            'metadata': {
+                'book_id': book_id,
+                'user_id': request.user.id
+            }
+        }
         try:
-            # Make payment request to Paystack
-            payment_response = paystack_api.initialize(amount=amount, email=user.email)
-            
-            # Save payment details to your database (example here)
-            fine_payment = Fine.objects.create(amount=amount, book_id=book_id, user=user)
-            serializer = FineSerializer(fine_payment)
+            response = request.post('https://api.paystack.co/transaction/initialize', headers=headers, json=payload)
+
+            if response.status_code == 200:
+                response_data = response.json()
+
+                return Response ({
+                    'status': 200,
+                    'message': 'Payment initiated successfully',
+                    'data': {
+                        'amount': f'${amount}',
+                        'bookId': book_id,
+                        'user': request.user.id,
+                        'transactionDate': payment.transaction_date,
+                        'reference': reference,
+                        'authorization_url': response_data['data']['authorization_url']
+                    }
+                })
+
+
             
             return Response({
                 "status": 200,
@@ -707,5 +752,8 @@ class PaymentProcessView(APIView):
                 "status": 400,
                 "message": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
     

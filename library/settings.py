@@ -15,6 +15,19 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# settings.py
+import environ
+
+# Initialize environ
+env = environ.Env()
+
+# Read .env file
+environ.Env.read_env()
+
+# Get Paystack keys from environment variables
+PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY = env('PAYSTACK_PUBLIC_KEY')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -26,11 +39,13 @@ SECRET_KEY = 'django-insecure-05=7x7v+x@_=lq(st1d0e^a0o=2mv%9f2tnqf8)dti&_!zl3t1
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    'https://library-management-system-pbnj.onrender.com/',
     'http://localhost:5173/',
     "http://127.0.0.1:5173",
     '127.0.0.1',
     'localhost',
-    'https://library-management-system-pbnj.onrender.com',
+    'library-management-system-pbnj.onrender.com'
+    
 ]
 
 
@@ -44,6 +59,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',
+    'paystack',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',

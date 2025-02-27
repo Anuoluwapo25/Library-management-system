@@ -73,8 +73,8 @@ class Payment(models.Model):
     bookId = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='book')
     reference = models.CharField(max_length=200, unique=True)
     transactionDate = models.DateField()
-    email = models.EmailField()
+    status = models.CharField(max_length=50, default="pending")
 
     def __str__(self):
-        return f"Payment: {self.amount} from {self.email}"
+        return f"Payment: {self.amount} "
 

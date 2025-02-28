@@ -69,8 +69,8 @@ class Fine(models.Model):
 
 class Payment(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='payment')
-    amount = models.CharField()
-    bookId = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='book')
+    amount = models.CharField(max_length=100)
+    bookId = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='bookid')
     reference = models.CharField(max_length=200, unique=True)
     transactionDate = models.DateField()
     status = models.CharField(max_length=50, default="pending")

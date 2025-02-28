@@ -10,6 +10,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from .serializer import UserRegistrationSerializer, LoginSerializer, UserDataSerializer, ResetPasswordSerializer, BookSerializer, BorrowSerializer, ReserveSerializer, FineSerializer, PaymentSerializer
 from .models import Book, User, Borrow, Reserve, Fine, Payment
+from paystackapi.paystack import Paystack
 from datetime import datetime
 from django.utils import timezone
 import uuid

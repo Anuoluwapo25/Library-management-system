@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,7 +23,9 @@ import environ
 env = environ.Env()
 
 # Read .env file
-environ.Env.read_env()
+
+environ.Env.read_env(env_file=".env")
+
 
 # Get Paystack keys from environment variables
 PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY')
@@ -59,7 +62,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',
-    'paystack',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',

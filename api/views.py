@@ -681,10 +681,6 @@ class FineView(APIView):
 
 
 
-
-
-
-
 class PaymentProcessView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -739,15 +735,8 @@ class PaymentProcessView(APIView):
                         'reference': reference,
                         'authorization_url': response_data['data']['authorization_url']
                     }
-                })
+                }, status=status.HTTP_201_CREATED)
 
-
-            
-            return Response({
-                "status": 200,
-                "message": "Payment processed successfully",
-                "data": serializer.data
-            })
         except Exception as e:
             return Response({
                 "status": 400,

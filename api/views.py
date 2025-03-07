@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from django.db.models.query import QuerySet
+from rest_framework.decorators import api_view
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
@@ -17,6 +18,13 @@ import uuid
 
 
 
+@api_view(['GET'])
+def api_root(request):
+    return Response({
+        "message": "Welcome to the Library Management System API.",
+        "books": "/api/books/",
+        "users": "/api/users/"
+    })
 
 class RegisterView(APIView):
     def post(self, request):
@@ -75,11 +83,9 @@ class LoginView(APIView):
 
             user = serializer.validated_data['user']
             
-            # Generate JWT token
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
 
-            # Get user data
             user_data = UserDataSerializer(user).data
 
             return Response({
@@ -137,11 +143,9 @@ class LogoutView(APIView):
     
     def post(self, request):
         try:
-            # Get the refresh token from the request
             refresh_token = request.data.get('refresh_token')
             
             if refresh_token:
-                # Blacklist the refresh token
                 token = RefreshToken(refresh_token)
                 token.blacklist()
             
@@ -315,41 +319,7 @@ class DeleteView(APIView):
                 "message": str(e)
             }, status=status.HTTP_BAD_REQUEST)
 
-# class BorrowView(APIView):
-#     permission_classes = [IsAuthenticated]
 
-#     def post(self, request):
-#         book_id = request.data.get('bookId')
-#         if not book_id:
-#             return Response({
-#                 "status": 400,
-#                 "message": "bookID required"
-#             }, status=status.HTTP_400_BAD_REQUEST) 
-        
-#         book = Book.objects.filter(id=book_id).first()
-#         if not book or not book.availability:
-#             return Response({
-#                 "status": 403,
-#                 "message": "Book not available"
-#             }, status=status.HTTP_403_FORBIDDEN)
-
-       
-#         borrow = Borrow.objects.create(
-#             book=book,
-#             borrowedBy=request.user
-#         )
-        
-       
-#         book.availability = False
-#         book.save()
-        
-#         serializer = BorrowSerializer(borrow)
-        
-#         return Response({
-#             "status": 201,
-#             "message": "Book borrowed successfully",
-#             "data": serializer.data
-#         }, status=status.HTTP_201_CREATED)
     
 
 class ReturnBookView(APIView):
@@ -374,43 +344,6 @@ class ReturnBookView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
-# class Renewborrow(APIView):
-#     # permission_classes = [IsAuthenticated]
-    
-#     def post(self, request):
-#         book_id = request.data.get('bookId')
-#         print(book_id)
-#         book = Book.objects.filter(id=book_id).first()
-#         print(book)
-#         if not book:
-#             return Response ({
-#                 'status': 403,
-#                 'message': 'book not avalaible'
-#             }, status=status.HTTP_BAD_REQUEST)
-
-#         borrow = Borrow.objects.filter(
-#                 book_id=book_id,
-#                 borrowedBy=request.user,
-#                 dateReturn__isnull=True
-#             ).first()
-#         print(borrow)
-
-#         if not borrow:
-#             return Response ({
-#                 'status': 404,
-#                 'message': "No active borrow found for this book"
-#             }, status=status.HTTP_404_NOT_FOUND)
-        
-#         borrow.book.availability = False
-#         borrow.book.save()
-        
-#         serializer = BorrowSerializer(borrow)
-        
-#         return Response({
-#             "status": 200,
-#             "message": "Book renewed successfully",
-#             "data": serializer.data
-#         }, status=status.HTTP_200_OK)
 
 class BorrowView(APIView):
     permission_classes = [IsAuthenticated]

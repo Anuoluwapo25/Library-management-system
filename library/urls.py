@@ -16,34 +16,34 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
+# from rest_framework.response import Response
+# from rest_framework.decorators import api_view
 
 
-@api_view(['GET'])
-def api_root(request):
-    return Response({
-        "message": "Welcome to the Library Management System API.",
-        "endpoints": {
-            "Register": "/auth/register/",
-            "Login": "/auth/login/",
-            "Reset Password": "/auth/password/reset/",
-            "Logout": "/auth/logout/",
-            "Add Book": "/auth/books/",
-            "Update Book": "/auth/books/<id>/",
-            "Borrow Book": "/borrow/",
-            "Return Book": "/return/",
-            "Reserve Book": "/reserve/",
-            "Renew Book": "/renew/",
-            "Borrow History": "/history/",
-            "Cancel Reservation": "/cancel/<id>/",
-            "Fines": "/fines/",
-            "Payments": "/payments/"
-        }
-    })
+# @api_view(['GET'])
+# def api_root(request):
+#     return Response({
+#         "message": "Welcome to the Library Management System API.",
+#         "endpoints": {
+#             "Register": "/auth/register/",
+#             "Login": "/auth/login/",
+#             "Reset Password": "/auth/password/reset/",
+#             "Logout": "/auth/logout/",
+#             "Add Book": "/auth/books/",
+#             "Update Book": "/auth/books/<id>/",
+#             "Borrow Book": "/borrow/",
+#             "Return Book": "/return/",
+#             "Reserve Book": "/reserve/",
+#             "Renew Book": "/renew/",
+#             "Borrow History": "/history/",
+#             "Cancel Reservation": "/cancel/<id>/",
+#             "Fines": "/fines/",
+#             "Payments": "/payments/"
+#         }
+#     })
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('', api_root),
+    # path('', api_root),
 ]

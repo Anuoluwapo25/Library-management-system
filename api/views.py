@@ -14,7 +14,9 @@ from .models import Book, User, Borrow, Reserve, Fine, Payment
 from paystackapi.paystack import Paystack
 from datetime import datetime
 from django.utils import timezone
+import requests
 import uuid
+
 
 
 
@@ -613,7 +615,6 @@ class FineView(APIView):
 
 
 
-
 class PaymentProcessView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -622,61 +623,137 @@ class PaymentProcessView(APIView):
         book_id = request.data.get('bookId')
         user = request.user
 
+        if not amount or not book_id:
+            return Response({
+                "status": 400,
+                "message": "Amount and book ID are required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            amount = float(amount)
+            book = Book.objects.get(pk=book_id)
+        except (ValueError, Book.DoesNotExist) as e:
+            return Response({
+                "status": 400,
+                "message": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         reference = f"pay_{uuid.uuid4().hex[:16]}"
 
-
         payment = Payment.objects.create(
-            user = user,
-            bookId = book_id,
-            amount =amount,
-            reference = reference,
+            user=user,
+            bookId=book,
+            amount=amount,
+            reference=reference,
+            transactionDate=datetime.now(),
             status="pending"
         )
-       
 
         headers = {
             'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}',
             'Content-Type': 'application/json',
         }
 
-        amount_kobo = int(amount * 100)
+        amount_kobo = int(amount * 100) 
 
-        payload= {
-            'email': request.user.email,
+        payload = {
+            'email': user.email,
             'amount': amount_kobo,
             'reference': reference,
-            'callback_url': f"{request.build_absolute_uri('/').rstrip('/')}/api/payments/verify/{reference}/",
+            'callback_url': f"{request.build_absolute_uri('/')}api/payments/verify/{reference}/",
             'metadata': {
                 'book_id': book_id,
-                'user_id': request.user.id
+                'user_id': user.id,
+                'payment_id': payment.id
             }
         }
+
         try:
-            response = request.post('https://api.paystack.co/transaction/initialize', headers=headers, json=payload)
+            response = requests.post(
+                'https://api.paystack.co/transaction/initialize',
+                headers=headers,
+                json=payload
+            )
+            
+            response_data = response.json()
 
-            if response.status_code == 200:
-                response_data = response.json()
+            if not response.ok:
+                return Response({
+                    "status": response.status_code,
+                    "message": response_data.get('message', 'Payment initialization failed')
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-                return Response ({
-                    'status': 200,
-                    'message': 'Payment initiated successfully',
-                    'data': {
-                        'amount': f'${amount}',
-                        'bookId': book_id,
-                        'user': request.user.id,
-                        'transactionDate': payment.transaction_date,
-                        'reference': reference,
-                        'authorization_url': response_data['data']['authorization_url']
-                    }
-                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'status': 200,
+                'message': 'Payment initiated successfully',
+                'data': {
+                    'amount': amount,
+                    'bookId': book_id,
+                    'user': user.id,
+                    'transactionDate': payment.transactionDate.strftime("%Y-%m-%d %H:%M:%S"),
+                    'reference': reference,
+                    'authorization_url': response_data['data']['authorization_url']
+                }
+            }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
+            payment.status = 'failed'
+            payment.save()
             return Response({
-                "status": 400,
+                "status": 500,
                 "message": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
-
-    
+class PaymentVerifyView(APIView):
+    def get(self, request, reference, *args, **kwargs):
+        try:
+            payment = Payment.objects.get(reference=reference)
+            
+            headers = {
+                'Authorization': f'Bearer {settings.PAYSTACK_SECRET_KEY}',
+                'Content-Type': 'application/json',
+            }
+            
+            response = requests.get(
+                f'https://api.paystack.co/transaction/verify/{reference}',
+                headers=headers
+            )
+            
+            response_data = response.json()
+            
+            if not response.ok:
+                payment.status = 'failed'
+                payment.save()
+                return Response({
+                    "status": response.status_code,
+                    "message": response_data.get('message', 'Payment verification failed')
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if response_data['data']['status'] == 'success':
+                payment.status = 'completed'
+                payment.save()
+                return Response({
+                    "status": 200,
+                    "message": "Payment verified successfully",
+                    "data": response_data['data']
+                })
+            else:
+                payment.status = 'failed'
+                payment.save()
+                return Response({
+                    "status": 400,
+                    "message": "Payment not successful",
+                    "data": response_data['data']
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Payment.DoesNotExist:
+            return Response({
+                "status": 404,
+                "message": "Payment not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                "status": 500,
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
